@@ -5,15 +5,16 @@
 -- Module      : Internal.HaskellDocument
 -- Copyright   : (c) 2013 Montez Fitzpatrick
 -- License     : MIT
--- Maintainer  :  Montez Fitzpatrick <montezf@gmail.com>
--- Portability :  non-portable
+-- Maintainer  : Montez Fitzpatrick <montezf@gmail.com>
+-- Portability : non-portable
 --
 -- 'HaskellDocument' data structure for format-neutral representation of documents.  
 -- This module format is heavily influenced by Pandoc.
 module Internal.HaskellDocument where
 
 import Control.Monad.ST
-import Data.Generics (Data, Typeable)
+import Data.Generics (Data)
+import Data.Typeable (Typeable)
 import Data.String
 import Data.Hashable (Hashable)
 import qualified Data.Map as M
@@ -21,22 +22,14 @@ import Data.XML.Types
 import Data.Set (Set)
 import Data.Text (Text)
 import qualified Data.Text as T
--- import qualified Data.HashTable.ST.Cuckoo
-import Data.HashTable.Class (HashTable)
-import Data.HashTable.IO (IOHashTable, CuckooHashTable)
-import qualified Data.HashTable.IO as H
-import qualified Language.Haskell.Extension (KnownExtension(..))
+import Language.Haskell.Extension (KnownExtension(..))
 
 data HaskellDocument = HaskellDocument Meta Components
               deriving (Eq, Ord, Read, Show, Typeable, Data)
 
--- newtype Meta = Meta { getMeta :: M.Map String MetaValue }
--- newtype Meta = Meta { getMeta :: ST s (HashTable s String MetaValue }
-newtype Meta = Meta { getMeta :: IO (HashTable String MetaValue }
+newtype Meta = Meta { getMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Read, Show, Typeable, Data)
-               
-type HashTable k v = CuckooHashTable k v
-               
+
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaPragma Pragma
                | MetaStr Text
@@ -46,24 +39,32 @@ data MetaValue = MetaMap (M.Map String MetaValue)
 
 -- | Initialize metadata
 initMeta :: Meta
-initMeta = H.new
+initMeta = Meta M.empty
 
 -- | Retrieve the metadata value for a given @key@.
--- lookupMeta :: String -> Meta -> Maybe MetaValue
--- lookupMeta key (Meta m) = M.lookup key m
 lookupMeta :: String -> Meta -> Maybe MetaValue
-lookupMeta key (Meta m) = m >>= \ht -> H.lookup ht key
+lookupMeta key (Meta m) = M.lookup key m
 
 -- | Insert metadata value for a given @key@.
-insertMeta :: (Eq k, Hashable k, HashTable h) => IO (IOHashTable h k v) -> k -> v -> IO (IOHashTable h k v)
-insertMeta m k v = m >>= \ht -> H.insert ht k v >> return ht
+insertMeta :: String -> MetaValue -> Meta -> Meta
+insertMeta k v (Meta m) = Meta $ M.insert k v m
 
--- Components
-data Components
+-- | Components represent the fixed segmented portion of a Haskell Module Document
+-- at least as far as the representation goes for our purposes.
+data Components = Components ModuleDecl DataTypeDecl FuncDecl
+    deriving (Eq, Ord, Read, Show, Typeable, Data)
+
+data ModuleDecl 
     = ModuleDecl 
-        { moduleDesc :: [Text], moduleImports :: Set Text, moduleExports :: Set Text}
-    | DataTypeDecl (M.Map String [DataRecord])
-    | FuncDecl (M.Map String [Text])
+    { moduleDesc :: [Text]
+    , moduleImports :: Set Text
+    , moduleExports :: Set Text
+    } deriving (Eq, Ord, Read, Show, Typeable, Data)
+
+newtype DataTypeDecl = DataTypeDecl {getDataTD :: M.Map String [DataRecord]}
+    deriving (Eq, Ord, Read, Show, Typeable, Data)
+
+newtype FuncDecl = FuncDecl {getfuncDecl :: M.Map String [Text]}
     deriving (Eq, Ord, Read, Show, Typeable, Data)
 
 -- NOTE: if we keep a set of datatypes that need to be created and a set of datatypes that
@@ -98,9 +99,6 @@ data Pragma = Pragma
     , pragmaOptions     :: [Text]
     } deriving (Eq, Ord, Read, Show, Typeable, Data)
     
--- TODO: import Language Pragmas
--- data PragmaLanguage
-
 type FieldName = Text
 type FieldType = Text -- could add some checking here in the future if needed
 type FieldComment = Maybe [Text]
@@ -113,7 +111,7 @@ type Comment = Text
 --   list of Language extensions.
 languageExtensionList :: [Text]
 languageExtensionList = map (T.pack . show) 
-                              ([minBound .. maxBound] :: [LHE.KnownExtension])
+                              ([minBound .. maxBound] :: [KnownExtension])
                               
 -- TODO: use a Set with ST monad
 addLanguageExtension :: String -> [Text]
