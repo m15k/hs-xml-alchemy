@@ -13,6 +13,7 @@
 module Internal.HaskellDocument where
 
 import Control.Monad.ST
+import Data.Default
 import Data.Generics (Data)
 import Data.Typeable (Typeable)
 import Data.String
@@ -20,21 +21,36 @@ import Data.Hashable (Hashable)
 import qualified Data.Map as M
 import Data.XML.Types
 import Data.Set (Set)
+import qualified Data.Set as S (empty)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Language.Haskell.Extension (KnownExtension(..))
 
-data HaskellDocument = HaskellDocument Meta Components
+data HaskellDocument = HaskellDocument Meta HSComponents
               deriving (Eq, Ord, Read, Show, Typeable, Data)
 
+instance Default HaskellDocument where
+  def = HaskellDocument (def :: Meta) (def :: HSComponents)
+              
 newtype Meta = Meta { getMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Read, Show, Typeable, Data)
+               
+instance Default Meta where
+  def = initMeta
 
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaPragma Pragma
                | MetaStr Text
                deriving (Eq, Ord, Read, Show, Typeable, Data)
-               
+
+-- | Initialize an Empty Haskell Document
+initHSDoc :: HaskellDocument
+initHSDoc = def         
+
+-- | empty HSComponents
+initHSC :: HSComponents
+initHSC = def
+      
 -- Helper functions to extract metadata
 
 -- | Initialize metadata
@@ -49,10 +65,13 @@ lookupMeta key (Meta m) = M.lookup key m
 insertMeta :: String -> MetaValue -> Meta -> Meta
 insertMeta k v (Meta m) = Meta $ M.insert k v m
 
--- | Components represent the fixed segmented portion of a Haskell Module Document
+-- | HSComponents represent the fixed segmented portion of a Haskell Module Document
 -- at least as far as the representation goes for our purposes.
-data Components = Components ModuleDecl DataTypeDecl FuncDecl
+data HSComponents = HSComponents ModuleDecl DataTypeDecl FuncDecl
     deriving (Eq, Ord, Read, Show, Typeable, Data)
+
+instance Default HSComponents where
+  def = HSComponents (def :: ModuleDecl) (def :: DataTypeDecl) (def :: FuncDecl)
 
 data ModuleDecl 
     = ModuleDecl 
@@ -61,11 +80,20 @@ data ModuleDecl
     , moduleExports :: Set Text
     } deriving (Eq, Ord, Read, Show, Typeable, Data)
 
+instance Default ModuleDecl where
+  def = ModuleDecl [] S.empty S.empty
+
 newtype DataTypeDecl = DataTypeDecl {getDataTD :: M.Map String [DataRecord]}
     deriving (Eq, Ord, Read, Show, Typeable, Data)
+    
+instance Default DataTypeDecl where
+  def = DataTypeDecl M.empty
 
 newtype FuncDecl = FuncDecl {getfuncDecl :: M.Map String [Text]}
     deriving (Eq, Ord, Read, Show, Typeable, Data)
+    
+instance Default FuncDecl where
+  def = FuncDecl M.empty
 
 -- NOTE: if we keep a set of datatypes that need to be created and a set of datatypes that
 --   have been created, then the difference from the created set and need set will be the TL

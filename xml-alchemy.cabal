@@ -23,9 +23,9 @@ library
     Internal.HaskellDocument
   --  FileIO
   --  Readers.XSD,
-  --  Readers.DTD,
+    Readers.DTD,
   --  Writers.HexpatPickle,
-   Version
+    Version
    
   other-modules:       Paths_xml_alchemy
   other-extensions:    BangPatterns, CPP, DeriveDataTypeable, OverloadedStrings
@@ -33,6 +33,9 @@ library
     base >=4.6 && <4.7,
     Cabal,
     containers,
+    data-default,
+    dtd-text,
+    dtd-types,
     hashable,
     io-streams,
     syb,
