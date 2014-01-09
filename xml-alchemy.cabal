@@ -24,7 +24,9 @@ library
   --  FileIO
   --  Readers.XSD,
   --  Readers.DTD,
-  --  Writers.HexpatPickle
+  --  Writers.HexpatPickle,
+   Version
+   
   other-modules:       Paths_xml_alchemy
   other-extensions:    BangPatterns, CPP, DeriveDataTypeable, OverloadedStrings
   build-depends:       
