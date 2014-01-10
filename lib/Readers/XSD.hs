@@ -32,7 +32,7 @@ parseXSD2HSDoc txt = runST $ do
 
   readSTRef hsc
   where
-    getXSD = dtdComponents $ parseXSD txt
+    getXSD = parseXSD txt
     parseXSD = undefined
 
 eval = undefined

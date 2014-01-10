@@ -129,7 +129,7 @@ data Pragma = Pragma
     
 type FieldName = Text
 type FieldType = Text -- could add some checking here in the future if needed
-type FieldComment = Maybe [Text]
+type FieldComment = Maybe [Comment]
 type ParamEntity = Text
 type Comment = Text
 
