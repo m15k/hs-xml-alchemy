@@ -22,7 +22,7 @@ library
   exposed-modules:     
     Internal.HaskellDocument
   --  FileIO
-  --  Readers.XSD,
+    Readers.XSD,
     Readers.DTD,
   --  Writers.HexpatPickle,
     Version
